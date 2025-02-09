@@ -72,6 +72,10 @@ function calculateSubTotal(items: BillItem[]): number {
 
 export function calculateTip(subTotal: number, tipPercentage: number): number {
   // output round to closest 10 cents, e.g. 12.34 -> 12.3
+    // 計算小費
+    const tip = subTotal * (tipPercentage / 100);
+    // 四捨五入到最近的 $0.1
+    return Math.round(tip * 10) / 10;
 }
 
 function scanPersons(items: BillItem[]): string[] {
