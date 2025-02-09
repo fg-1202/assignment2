@@ -80,7 +80,18 @@ export function calculateTip(subTotal: number, tipPercentage: number): number {
 
 function scanPersons(items: BillItem[]): string[] {
   // scan the persons in the items
+  const persons = new Set<string>();
+  
+  items.forEach(item => {
+    if (!item.isShared) {
+      persons.add(item.person);
+    }
+  });
+
+  return Array.from(persons);
 }
+
+
 
 function calculateItems(
   items: BillItem[],
@@ -108,6 +119,16 @@ function calculatePersonAmount(input: {
   // for shared items, split the price evenly
   // for personal items, do not split the price
   // return the amount for the person
+  let total = 0;
+
+  input.items.forEach(item => {
+    if (item.isShared) {
+      total += item.price / input.persons; // 平均分配
+    } else if (item.person === input.name) {
+      total += item.price; // 個人項目
+    }
+  });
+  return total;
 }
 
 function adjustAmount(totalAmount: number, items: PersonItem[]): void {
