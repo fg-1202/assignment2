@@ -60,13 +60,14 @@ export function formatDate(date: string): string {
   // input format: YYYY-MM-DD, e.g. "2024-03-21"
   // output format: YYYY年M月D日, e.g. "2024年3月21日"
   const [year, month, day] = date.split('-').map(Number);
-
 // 返回格式化的字符串
 return `${year}年${month}月${day}日`;
 }
 
 function calculateSubTotal(items: BillItem[]): number {
   // sum up all the price of the items
+  // 使用 reduce 方法累加所有項目的價格
+  return items.reduce((total, item) => total + item.price, 0);
 }
 
 export function calculateTip(subTotal: number, tipPercentage: number): number {
