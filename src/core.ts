@@ -1,4 +1,4 @@
-/* 輸入 Type */
+/* chiu wan chi assignment1*/
 export type BillInput = {
   date: string
   location: string
