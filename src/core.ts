@@ -1,4 +1,4 @@
-/* chiu wan chi assignment1*/
+/* chiu wan chi assignment2*/
 export type BillInput = {
   date: string
   location: string
