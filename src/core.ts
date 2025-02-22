@@ -1,4 +1,4 @@
-/* chiu wan chi assignment2*/
+/* 輸入 Type */
 export type BillInput = {
   date: string
   location: string
@@ -56,123 +56,79 @@ export function splitBill(input: BillInput): BillOutput {
   }
 }
 
- // input format: YYYY-MM-DD, e.g. "2024-03-21"
-  // output format: YYYY年M月D日, e.g. "2024年3月21日"
-  export function formatDate(date: string): string {
-    // 將日期字串分割為年、月、日
-    const [year, month, day] = date.split('-');
-    
-    // 將月和日轉為整數以去除前導零
-    return `${year}年${parseInt(month)}月${parseInt(day)}日`;
-  }
-
-
-  // sum up all the price of the items
-  export function calculateSubTotal(items: BillItem[]): number {
-    // 使用 reduce 方法來累加所有項目的價格
-    return items.reduce((total, item) => total + item.price, 0);
-  }
-
-
-  // output round to closest 10 cents, e.g. 12.34 -> 12.3
-export function calculateTip(subTotal: number, tipPercentage: number): number {
-  // 計算小費
-  const tip = (subTotal * tipPercentage) / 100;
-  
-  // 四捨五入至最近的 $0.1 元
-  return Math.round(tip * 10) / 10;
+export function formatDate(date: string): string {
+  const [year, month, day] = date.split('-').map(Number);// input format: YYYY-MM-DD, e.g. "2024-03-21"
+  return `${year}年${month}月${day}日`;// output format: YYYY年M月D日, e.g. "2024年3月21日"
 }
 
+function calculateSubTotal(items: BillItem[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
+  // sum up all the price of the items
+}
 
-  // scan the persons in the items
+export function calculateTip(subTotal: number, tipPercentage: number): number {
+  const tip = subTotal * (tipPercentage / 100);
+  return Math.round(tip * 10) / 10; // output round to closest 10 cents, e.g. 12.34 -> 12.3
+}
 
 function scanPersons(items: BillItem[]): string[] {
-  const persons = new Set<string>(); // 使用 Set 以避免重複
-
-  // 遍歷所有項目，收集用餐者的名字
+  const persons = new Set<string>();
   items.forEach(item => {
-    if (!item.isShared) {
+    if (item.isShared) {
+      // Do nothing for shared items
+    } else {
       persons.add(item.person);
     }
   });
-
-  return Array.from(persons); // 將 Set 轉換為陣列
+  return Array.from(persons); // scan the persons in the items
 }
 
-function calculateItems(
-  items: BillItem[],
-  tipPercentage: number,
-): PersonItem[] {
-  let names = scanPersons(items)
-  let persons = names.length
+function calculateItems(items: BillItem[], tipPercentage: number): PersonItem[] {
+  const names = scanPersons(items);
+  const personsCount = names.length;
+  
   return names.map(name => ({
     name,
     amount: calculatePersonAmount({
       items,
       tipPercentage,
       name,
-      persons,
+      persons: personsCount,
     }),
-  }))
+  }));
 }
 
 function calculatePersonAmount(input: {
-  items: BillItem[];
-  tipPercentage: number;
-  name: string;
-  persons: number;
+  items: BillItem[]
+  tipPercentage: number
+  name: string
+  persons: number
 }): number {
   let amount = 0;
 
-  // 遍歷所有項目，計算個別用餐者的金額
   input.items.forEach(item => {
     if (item.isShared) {
-      // 對於均分的項目，計算每個人應付的金額
       amount += item.price / input.persons;
     } else if (item.person === input.name) {
-      // 對於個人項目，僅計算該用餐者的金額
       amount += item.price;
     }
   });
 
-  // 計算小費
-  const tip = (amount * input.tipPercentage) / 100;
-
-  // 將小費加到總金額中
-  amount += tip;
-
-  // 四捨五入至最近 $0.1 元
-  return Math.round(amount * 10) / 10;
+  const tip = amount * (input.tipPercentage / 100);
+  return Math.round((amount + tip + Number.EPSILON) * 10) / 10; // for shared items, split the price evenly, for personal items, do not split the price, return the amount for the person
 }
-
-
 
 function adjustAmount(totalAmount: number, items: PersonItem[]): void {
-  // 計算當前金額的總和
-  const currentTotal = items.reduce((sum, item) => sum + item.amount, 0);
-  
-  // 計算需要調整的金額
-  const adjustment = totalAmount - currentTotal;
+  const totalCalculated = items.reduce((sum, item) => sum + item.amount, 0);
+  const difference = Math.round((totalAmount - totalCalculated + Number.EPSILON) * 10) / 10;
 
-  // 如果沒有需要調整的金額，則直接返回
-  if (adjustment === 0) return;
+  console.log("Total Calculated:", totalCalculated);
+  console.log("Difference:", difference);
 
-  // 找到金額最高的用餐者，若金額相同則選擇第一位
-  const maxItem = items.reduce((prev, current) => {
-    if (current.amount > prev.amount) {
-      return current;
-    }
-    return prev; // 保持 prev 不變，如果相等則返回 prev
-  });
-
-  // 如果需要調整的金額是正數，則向上調整 0.1 元
-  if (adjustment > 0) {
-    maxItem.amount += 0.1; // 向上調整 0.1 元
-  } else {
-    // 向下調整，根據需要的調整金額進行調整
-    maxItem.amount += adjustment;
+  if (difference !== 0) {
+    const adjustment = Math.sign(difference) * 0.1;
+    items[0].amount = Math.round((items[0].amount + adjustment + Number.EPSILON) * 10) / 10; // adjust the personal amount to match the total amount
   }
-
-  // 四捨五入至最近 $0.1 元
-  maxItem.amount = Math.round(maxItem.amount * 10) / 10;
 }
+
+
